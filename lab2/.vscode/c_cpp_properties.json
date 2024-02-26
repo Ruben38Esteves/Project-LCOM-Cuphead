@@ -1,19 +1,18 @@
 {
-  "env": {
-    "minix.include": "${workspaceFolder}/../.minix-src/include"
-  },
-  "configurations": [{
-    "name": "Minix",
-    "compilerPath": "",
-    "cStandard": "c11",
-    "defines": ["__minix", "_MINIX", "_NETBSD_SOURCE", "__i386__"],
-    "includePath": ["${workspaceFolder}", "${env:minix.include}"],
-    "browse": {
-      "path": ["${workspaceFolder}", "${env:minix.include}"],
-      "limitSymbolsToIncludedHeaders": false,
-      "databaseFilename": ""
+  "configurations": [
+    {
+      "name": "linux-gcc-x64",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "${default}",
+      "cppStandard": "${default}",
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerArgs": [
+        ""
+      ]
     }
-  }],
+  ],
   "version": 4
 }
-
