@@ -46,6 +46,7 @@ int (timer_display_conf)(uint8_t timer, uint8_t st,
   
   if (timer > 2 || timer < 0) return 1;
   union timer_status_field_val val;
+  uint8_t mode = st & 0x0E;
 
   switch(field){
 
@@ -53,28 +54,32 @@ int (timer_display_conf)(uint8_t timer, uint8_t st,
       val.byte = st;
       break;
 
-    case tsf_initial: // alguns erros neste caso
-      if ((st & TIMER_LSB) == TIMER_LSB){
+    case tsf_initial:
+      if ((st & TIMER_LSB_MSB) == TIMER_LSB_MSB){
+        val.in_mode = MSB_after_LSB;
+      }
+      else if ((st & TIMER_LSB) == TIMER_LSB){
         val.in_mode = LSB_only;
       }
       else if ((st & TIMER_MSB) == TIMER_MSB){
         val.in_mode = MSB_only;
-      }
-      else if ((st & TIMER_LSB_MSB) == TIMER_LSB_MSB){
-        val.in_mode = MSB_after_LSB;
       }
       else{
         val.in_mode = INVAL_val;
       }
       break;
     
-    case tsf_mode: // alguns erros neste caso
-      if ((st & TIMER_RATE_GEN) == TIMER_RATE_GEN){
-        val.count_mode = 2;
-      }
-      if ((st & TIMER_SQR_WAVE) == TIMER_SQR_WAVE){
+    case tsf_mode:
+
+      if ((mode & TIMER_SQR_WAVE) == TIMER_SQR_WAVE){
         val.count_mode = 3;
       }
+      else if ((mode & TIMER_RATE_GEN) == TIMER_RATE_GEN){
+        val.count_mode = 2;
+      }
+
+      else val.count_mode = (mode >> 1);
+
       break;
     
     case tsf_base:
