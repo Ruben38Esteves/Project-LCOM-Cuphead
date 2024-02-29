@@ -6,9 +6,38 @@
 #include "i8254.h"
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
-  if (timer > 2 || timer < 0) return 1;
+  if (freq <= 0 || freq > TIMER_FREQ) return 1;
 
-  return 1;
+  uint8_t config;
+  int flag1 = timer_get_conf(0, &config);
+  uint16_t rate = TIMER_FREQ / freq;
+  uint8_t lsb, msb;
+  int flag2 = util_get_LSB(rate, &lsb);
+  int flag3 = util_get_MSB(rate, &msb);
+
+  uint8_t ctrl_word = (0x0F & config) | TIMER_LSB_MSB;
+
+  switch(timer){
+    case 0:
+      ctrl_word = ctrl_word | TIMER_SEL0;
+      break;
+    case 1:
+      ctrl_word = ctrl_word | TIMER_SEL1;
+      break;
+    case 2:
+      ctrl_word = ctrl_word | TIMER_SEL2;
+      break;
+
+    default:
+      return 1;
+  }
+
+  int flag4 = sys_outb(TIMER_CTRL, ctrl_word);
+  int flag5 = sys_outb(TIMER_0 + timer, lsb);
+  int flag6 = sys_outb(TIMER_0 + timer, msb);
+
+
+  return (flag1 || flag2 || flag3 || flag4 || flag5 || flag6);
 }
 
 int (timer_subscribe_int)(uint8_t *bit_no) {
