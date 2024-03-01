@@ -6,10 +6,11 @@
 #include "i8254.h"
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
-  if (freq <= 0 || freq > TIMER_FREQ) return 1;
+  uint32_t MIN_FREQ = TIMER_FREQ / 65535;
+  if (freq <= MIN_FREQ || freq > TIMER_FREQ) return 1;
 
   uint8_t config;
-  int flag1 = timer_get_conf(0, &config);
+  int flag1 = timer_get_conf(timer, &config);
   uint16_t rate = TIMER_FREQ / freq;
   uint8_t lsb, msb;
   int flag2 = util_get_LSB(rate, &lsb);
