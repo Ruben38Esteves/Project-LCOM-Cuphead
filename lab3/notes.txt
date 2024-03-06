@@ -1,0 +1,31 @@
+teclado tem duas portas
+0x60 - dataport ler e escrever dados
+0x64 - ler status / escrever comando
+é preciso saber se o buffer esta vazio antes de escrever comando
+
+status- 
+bit 0 - output buffer full ( 0 empty, 1 full), se estiver a 1 é porque tem coisas para me dizer ( posso ler)
+bit 1 - input buffer full (0 empyt, 1 full), se estiver empty é porque posso escrever
+bit 2 - cagar
+bit 3 - cagar
+bit 4 - cagar
+bit 5 - cagar
+bit 6 - timeout (0  nao ha erros, 1 ha erros) mais importante na leitura
+bit 7 - parity (0  nao ha erros, 1 ha erros)
+
+while tentativas
+    ler status
+    status bit 1 = 0 ? 
+        - sim -> escrevo
+            sysoutb( 0x64, cmd)
+        - nao -> erro
+delay
+
+while tentativas
+    ler status
+    status bit 0 = 1 ? 
+        - sim -> 
+            timout? 
+            paridade?
+            util_sys_inb(0x60, key)
+        - nao -> nao faço leitura
