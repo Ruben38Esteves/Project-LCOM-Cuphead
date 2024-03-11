@@ -32,45 +32,39 @@ int main(int argc, char *argv[]) {
 
 int(timer_test_read_config)(uint8_t timer, enum timer_status_field field) {
   /* To be implemented by the students */
-  u_int8_t st;
-  if(!timer_get_conf(timer, &st)) return 1;
-  if(!timer_display_conf(timer, st,field)) return 1;
+  uint8_t irq_set;
+  message msg;
 
+  if(timer_subscribe_int(&irq_set) != 0) return 1;
+  
+  while(time > 0) { /* time  */
+     /* Get a request message. */
+     if ( (r = driver_receive(ANY, &msg, &ipc_status)) != 0 ) { 
+         printf("driver_receive failed with: %d", r);
+         continue;
+     }
+     if (is_ipc_notify(ipc_status)) { /* received notification */
+         switch (_ENDPOINT_P(msg.m_source)) {
+            case HARDWARE: /* hardware interrupt notification */                
+                if (msg.m_notify.interrupts & irq_set) { /* subscribed interrupt */
+                   timer_int_handler(); 
+                   if(counter%60==0){
+                      timer_print_elapsed_time();
+                      time--;
+                   }
+                }
+              break;
+            default:
+              break; /* no other notifications expected: do nothing */    
+         }
+     } else { /* received a standard message, not a notification */
+         /* no standard messages expected: do nothing */
+     }
+  }
+
+  if (timer_unsubscribe_int() != 0) return 1;
   return 0;
-}
 
-int(timer_test_time_base)(uint8_t timer, uint32_t freq) {
-  /* To be implemented by the students */
-  if(timer>2) return 1;
-  if(!timer_set_frequency(timer,freq) ) return 1;
+  return 1;
 
-  return 0;
-}
-
-int(timer_test_int)(uint8_t time) {
-  /* To be implemented by the students */
-  int ipc_status, r;
-  int ipc_status;
- 4: message msg;
- 5:
- 6: while( 1 ) { /* You may want to use a different condition */
- 7:    /* Get a request message. */
- 8:    if ( (r = driver_receive(ANY, &msg, &ipc_status)) != 0 ) { 
- 9:        printf("driver_receive failed with: %d", r);
-10:        continue;
-11:    }
-12:    if (is_ipc_notify(ipc_status)) { /* received notification */
-13:        switch (_ENDPOINT_P(msg.m_source)) {
-14:            case HARDWARE: /* hardware interrupt notification */				
-15:                if (msg.m_notify.interrupts & irq_set) { /* subscribed interrupt */
-16:                    ...   /* process it */
-17:                }
-18:                break;
-19:            default:
-20:                break; /* no other notifications expected: do nothing */	
-21:        }
-22:    } else { /* received a standard message, not a notification */
-23:        /* no standard messages expected: do nothing */
-24:    }
-25: }
 }

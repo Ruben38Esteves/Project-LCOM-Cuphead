@@ -1,5 +1,6 @@
 #include <lcom/lcf.h>
 #include <lcom/utils.h>
+#include <lcom/timer.h>
 
 #include <stdint.h>
 
