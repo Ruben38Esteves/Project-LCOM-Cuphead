@@ -9,7 +9,7 @@ int counter = 0;
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 
 
-  if (freq > TIMER_FREQ) return 1;
+  if (freq > TIMER_FREQ || freq < 19) return 1;
 
  
 
@@ -58,7 +58,7 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 int (timer_subscribe_int)(uint8_t *bit_num) {
   if( bit_num == NULL) return 1; 
   *bit_num = BIT(hook_id);     
-    
+
   if (sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &hook_id) != 0) return 1; 
   return 0;
 }

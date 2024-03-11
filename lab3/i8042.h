@@ -11,10 +11,17 @@
 #define PARITY BIT(7)
 #define TIMEOUT BIT(6)
 
-#define FULLIN_BUFF BIT(1)
-#define FULLOUT_BUFF BIT(0)
+#define AUX BIT(5)
 
-#define 
+#define IN_BUFF BIT(1)
+#define OUT_BUFF BIT(0)
+
+#define READ_COMMAND 0x20
+#define write_COMMAND 0x60
+
+
+
+
 
 
 #endif /* _LCOM_I8042_H */
