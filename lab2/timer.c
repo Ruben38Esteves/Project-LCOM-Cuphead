@@ -22,11 +22,11 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
   if (freq <= MIN_FREQ || freq > TIMER_FREQ) return 1;
 
   uint8_t config;
-  int flag1 = timer_get_conf(timer, &config);
+  if(timer_get_conf(timer, &config)) return 1;
   uint16_t rate = TIMER_FREQ / freq;
   uint8_t lsb, msb;
-  int flag2 = util_get_LSB(rate, &lsb);
-  int flag3 = util_get_MSB(rate, &msb);
+  if(util_get_LSB(rate, &lsb)) return 1;
+  if(util_get_MSB(rate, &msb)) return 1;
 
   uint8_t ctrl_word = (0x0F & config) | TIMER_LSB_MSB;
 
@@ -45,12 +45,12 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
       return 1;
   }
 
-  int flag4 = sys_outb(TIMER_CTRL, ctrl_word);
-  int flag5 = sys_outb(TIMER_0 + timer, lsb);
-  int flag6 = sys_outb(TIMER_0 + timer, msb);
+  if(sys_outb(TIMER_CTRL, ctrl_word)) return 1;
+  if(sys_outb(TIMER_0 + timer, lsb)) return 1;
+  if(sys_outb(TIMER_0 + timer, msb)) return 1;
 
 
-  return (flag1 || flag2 || flag3 || flag4 || flag5 || flag6);
+  return 0;
 }
 
 int (timer_subscribe_int)(uint8_t *bit_no) {
@@ -76,10 +76,10 @@ int (timer_get_conf)(uint8_t timer, uint8_t *st) {
   if (timer > 2 || timer < 0) return 1;
   uint8_t t = BIT(timer+1);
   uint8_t rb_cmd = TIMER_RB_CMD | TIMER_RB_COUNT_ | t;
-  int flag1 = sys_outb(0x43, rb_cmd);
-  int flag2 = util_sys_inb(TIMER_0 + timer, st);
+  if(sys_outb(0x43, rb_cmd)) return 1;
+  if(util_sys_inb(TIMER_0 + timer, st)) return 1;
 
-  return (flag1 || flag2);
+  return 0;
 }
 
 int (timer_display_conf)(uint8_t timer, uint8_t st,

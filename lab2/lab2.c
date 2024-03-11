@@ -31,11 +31,11 @@ int main(int argc, char *argv[]) {
 
 int(timer_test_read_config)(uint8_t timer, enum timer_status_field field) {
   uint8_t st;
-  int flag1 = timer_get_conf(timer, &st);
-  int flag2 = timer_display_conf(timer, st, field);
+  if(timer_get_conf(timer, &st)) return 1;
+  if(timer_display_conf(timer, st, field)) return 1;
   
 
-  return (flag1 || flag2);
+  return 0;
 }
 
 int(timer_test_time_base)(uint8_t timer, uint32_t freq) {
@@ -52,9 +52,8 @@ int(timer_test_int)(uint8_t time) {
   int ipc_status;
   message msg;
   uint8_t irq_set;
-  int flag = 1;
   
-  int flag1 = timer_subscribe_int(&irq_set);
+  if(timer_subscribe_int(&irq_set)) return 1;
 
  while( 1 ) { /* You may want to use a different condition */
  
@@ -70,7 +69,7 @@ int(timer_test_int)(uint8_t time) {
                 if (msg.m_notify.interrupts & irq_set) { /* subscribed interrupt */
                     timer_int_handler();
                     if (get_counter() % 60 == 0) {
-                      flag = timer_print_elapsed_time();
+                      if(timer_print_elapsed_time()) return 1;
                       time--;     
                     }
                 }
@@ -83,7 +82,7 @@ int(timer_test_int)(uint8_t time) {
     }
  }
 
-  int flag2 = timer_unsubscribe_int();
+  if(timer_unsubscribe_int()) return 1;
 
-  return flag || flag1 || flag2;
+  return 0;
 }
