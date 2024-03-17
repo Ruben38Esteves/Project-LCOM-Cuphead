@@ -4,7 +4,14 @@
 
 
 
+
 int (keyboard_subscribe_int)(uint8_t *bit_no);
 
 int (keyboard_unsubscribe_int)();
+
+int (keyboard_get_status)(uint8_t* status);
+
+int (keyboard_read_output)(uint8_t* output);
+
+void (kbc_ih)();
 
