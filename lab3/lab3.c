@@ -7,8 +7,10 @@
 
 #include "i8042.h"
 #include "keyboard.h"
+#include "timer.c"
 
 extern int cnt;
+extern int counter_timer;
 extern uint8_t scancode;
 
 int main(int argc, char *argv[]) {
@@ -45,7 +47,7 @@ int(kbd_test_scan)() {
   if(keyboard_subscribe_int(&irq_set)) 
     return 1;
 
- while( scancode != ESC_BREAKCODE ) { /* You may want to use a different condition */
+  while( scancode != ESC_BREAKCODE ) { /* You may want to use a different condition */
  
     /* Get a request message. */
     if ( (r = driver_receive(ANY, &msg, &ipc_status)) != 0 ) { 
@@ -106,8 +108,69 @@ int(kbd_test_poll)() {
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  int r;
+  int ipc_status;
+  message msg;
+  uint8_t irq_set_timer;
+  uint8_t irq_set_keyboard;
+
+  int time = n;
+
+  if(timer_subscribe_int(&irq_set_timer))
+    return 1;
+
+  if(keyboard_subscribe_int(&irq_set_keyboard))
+    return 1;
+
+  while( scancode != ESC_BREAKCODE && time > 0 ) { /* You may want to use a different condition */
+ 
+    /* Get a request message. */
+    if ( (r = driver_receive(ANY, &msg, &ipc_status)) != 0 ) { 
+        printf("driver_receive failed with: %d", r);
+        continue;
+    }
+    if (is_ipc_notify(ipc_status)) { /* received notification */
+        switch (_ENDPOINT_P(msg.m_source)) {
+            case HARDWARE: /* hardware interrupt notification */				
+                if (msg.m_notify.interrupts & irq_set_keyboard) { /* subscribed interrupt */
+                    kbc_ih();
+                    bool make = (!((scancode & BIT(7)) == BIT(7)));
+                    uint8_t size;
+                    if(scancode == 0xE0){
+                      size = 2;
+                    }
+                    else{
+                      size = 1;
+                    }
+                    kbd_print_scancode(make,size, &scancode);
+                    time = n;
+                    counter_timer = 0;
+                }
+                if (msg.m_notify.interrupts & irq_set_timer) { /* subscribed interrupt */
+                    timer_int_handler();
+                    if (counter_timer % 60 == 0) {
+                      time--;     
+                    }
+                }
+                break;
+            default:
+                break; /* no other notifications expected: do nothing */	
+        }
+    } else { /* received a standard message, not a notification */
+        /* no standard messages expected: do nothing */
+    }
+ }
+
+  if(timer_unsubscribe_int())
+    return 1;
+
+  if(keyboard_unsubscribe_int())
+    return 1;
+    
+  if (kbd_print_no_sysinb(cnt))
+    return 1;
+  return 0;
+  
 
   return 1;
 }
