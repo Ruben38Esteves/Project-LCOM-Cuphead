@@ -84,10 +84,25 @@ int(kbd_test_scan)() {
 }
 
 int(kbd_test_poll)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
 
-  return 1;
+  while( scancode != ESC_BREAKCODE ){
+    if (keyboard_read_output(&scancode)) 
+      return 1;
+    bool make = (!((scancode & BIT(7)) == BIT(7)));
+    uint8_t size;
+    if(scancode == 0xE0){
+      size = 2;
+    }
+    else{
+      size = 1;
+    }
+    kbd_print_scancode(make,size, &scancode);  
+  }
+
+  if (keyboard_restore_int())
+    return 1;
+
+  return 0;
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {

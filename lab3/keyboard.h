@@ -15,3 +15,5 @@ int (keyboard_read_output)(uint8_t* output);
 
 void (kbc_ih)();
 
+int (keyboard_restore_int)();
+

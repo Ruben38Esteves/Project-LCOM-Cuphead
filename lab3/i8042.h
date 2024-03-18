@@ -6,7 +6,11 @@
 
 
 #define KBC_ST_REG 0x64
+#define KBC_CMD_REG 0x64
 #define KBC_OUT_BUF 0x60
+#define KBC_READ_CMD 0x20
+#define KBC_WRITE_CMD 0x60
+
 
 
 #define KBC_OBF BIT(0)
