@@ -4,7 +4,6 @@
 #define OUT_BUF 0x60 
 
 #define STATUS_REG 0x64 
-#define NOT_NAMED 0x64 //? 
 
 #define KEYBOARD_IRQ 1 
 
@@ -18,6 +17,8 @@
 
 #define READ_COMMAND 0x20
 #define write_COMMAND 0x60
+
+#define DELAY 20000
 
 
 

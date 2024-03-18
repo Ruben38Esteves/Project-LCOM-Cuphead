@@ -30,11 +30,49 @@ int main(int argc, char *argv[]) {
 }
 
 int(kbd_test_scan)() {
-  /* To be completed by the students */
-  if (!kbd_scan()) {return 1;}
+  // Initialize variables
+    int ipc_status;
+    message msg;
+    uint8_t irq_set;
+    uint8_t scancode;
 
-  return 0;
+    // Subscribe to keyboard interrupts
+    if (keyboard_subscribe_int(&irq_set) != 0) {
+        return 1;
+    }
+
+    // Main loop to handle keyboard interrupts
+    while (scancode != ESC_BREAKCODE) { // Loop until ESC key is pressed
+        // Get a request message
+        int r = driver_receive(ANY, &msg, &ipc_status);
+        if (r != 0) {
+            printf("driver_receive failed with: %d", r);
+            continue;
+        }
+
+        // Check if the received message is a notification
+        if (is_ipc_notify(ipc_status)) {
+            switch (_ENDPOINT_P(msg.m_source)) {
+                case HARDWARE: // Hardware interrupt notification
+                    if (msg.m_notify.interrupts & BIT(irq_set)) { // Check if it's from the keyboard
+                        
+                    }
+                    break;
+                default:
+                    break; // No other notifications expected
+            }
+        }
+    }
+
+    // Unsubscribe from keyboard interrupts
+    if (keyboard_unsubscribe_int() != 0) {
+        printf("Failed to unsubscribe from keyboard interrupts\n");
+        return 1;
+    }
+
+    return 0;
 }
+
 
 int(kbd_test_poll)() {
   /* To be completed by the students */
