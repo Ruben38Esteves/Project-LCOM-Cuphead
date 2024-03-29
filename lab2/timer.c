@@ -11,15 +11,18 @@ int counter = 0;
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 	if (freq > TIMER_FREQ || freq < 19) return 1;
 
+	// buscar config antiga e preparar a nova
 	uint8_t old_config = 0, new_config = 0;
 	if(timer_get_conf(timer, &old_config)) return 1;
 	new_config = (old_config & 0x0F) | TIMER_LSB_MSB; 
-
+	
+	// is buscar lsb e msb da freq desejada
 	uint32_t initial_value = TIMER_FREQ / freq;
   	uint8_t msb = 0, lsb = 0;
 	if(util_get_LSB(initial_value, &lsb)) return 1;
 	if(util_get_MSB(initial_value, &msb)) return 1;
 
+	// inserir o timer que queremos na nova config
 	uint8_t selected_timer;      
 	switch (timer) {  
 		case 0: 
@@ -38,8 +41,10 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 			return 1;
 	}
 
+	// enviar nova config e avisar de lsb e msb
 	if(sys_outb(TIMER_CTRL, new_config)) return 1;
 
+	//enviar lsb e msb
 	if(sys_outb(selected_timer, lsb)) return 1;
 	if(sys_outb(selected_timer, msb)) return 1;
 
@@ -47,7 +52,7 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 }
 
 int (timer_subscribe_int)(uint8_t *bit_no) {
-	*bit_no = hook_id;
+	*bit_no = BIT(hook_id);
 	if(sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &hook_id)) return 1;
 	return 0;
 }

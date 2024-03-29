@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "keyboard.h"
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -29,19 +30,49 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+uint32_t kbd_sysinb_cnt = 0;
+
+extern uint8_t scancode;
 
 int(kbd_test_scan)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
 
-  return 1;
+  int ipc_status;
+  uint8_t irq_set;
+  message msg;
+
+  if(keyboard_subscribe_interruption(&irq_set) != 0) return 1;
+
+  while(scancode != 0x81){ // a condição de paragem é obter um breakcode da tecla ESC
+
+    if( driver_receive(ANY, &msg, &ipc_status) != 0 ){
+        printf("Error");
+        continue;
+    }
+
+    if(is_ipc_notify(ipc_status)) {
+      switch(_ENDPOINT_P(msg.m_source)){
+        case HARDWARE:
+          if (msg.m_notify.interrupts & irq_set) {
+            kbd_ih();
+            kbd_print_scancode(!(scancode & BIT(7)), scancode == 0xE0 ? 2 : 1, &scancode);
+          }
+      }
+    }
+  }
+  if(kbd_print_no_sysinb(kbd_sysinb_cnt)) return 1;
+  if(keyboard_unsubscribe_interruption()) return 1;
+  return 0;
 }
 
 int(kbd_test_poll)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
-
-  return 1;
+  
+  while(scancode != 0x81){
+    kbd_ih();
+    kbd_print_scancode(!(scancode & BIT(7)), scancode == 0xE0 ? 2 : 1, &scancode);
+  }
+  if(kbd_print_no_sysinb(kbd_sysinb_cnt)) return 1;
+  if(keyboard_restore()) return 1;
+  return 0;
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
