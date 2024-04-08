@@ -1,35 +1,38 @@
-#include "keyboard.h" // Include your keyboard header file here
 
-int keyboard_subscribe_int(uint8_t *bit_num) {
-    if (bit_num == NULL) return 1; // Check for NULL pointer
-    
-    *bit_num = KBD_IRQ; // Set the bit number
-    
-    // Subscribe to keyboard interrupts
-    if (sys_irqsetpolicy(KBD_IRQ, IRQ_REENABLE | IRQ_EXCLUSIVE, &hook_id) != OK) {
-        printf("keyboard_subscribe_int: sys_irqsetpolicy failed\n");
-        return 1;
-    }
-    
+#include <lcom/lcf.h>
+#include <lcom/lab3.h>
+#include "keyboard.h"
+#include "kbc.h"
+
+uint8_t scancode = 0;
+int kbc_hook_id = 1;
+
+int (kbc_int_subscribe)(uint8_t *bit_no) {
+    if (bit_no == NULL) {return 1;}
+    *bit_no = BIT(kbc_hook_id);
+    if(sys_irqsetpolicy(1,IRQ_REENABLE | IRQ_EXCLUSIVE, &kbc_hook_id)) {return 1;}
     return 0;
 }
 
-int keyboard_unsubscribe_int() {
-    // Unsubscribe from keyboard interrupts
-    if (sys_irqrmpolicy(&hook_id) != OK) {
-        printf("keyboard_unsubscribe_int: sys_irqrmpolicy failed\n");
-        return 1;
-    }
-    
+int (kbc_int_unsubscribe)() {
+    if(sys_irqrmpolicy(&kbc_hook_id)) {return 1;}
     return 0;
 }
 
-int keyboard_read_scancode(uint8_t *scancode) {
-    // Read the scancode from the keyboard
-    if (util_sys_inb(KBD_OUT_BUF, scancode) != OK) {
-        printf("keyboard_read_scancode: util_sys_inb failed\n");
-        return 1;
-    }
-    
+void (kbc_ih)() {
+    if(read_KBC_output(0x60,&scancode,0)) {}
+}
+
+int (kbc_restore)() {
+    uint8_t commandByte;
+
+    if (write_KBC_command(0x64, 0x20)) return 1;  
+    if(read_KBC_output(0x60,&commandByte,0)) {return 1;}
+
+    commandByte |= BIT(0);
+
+    if(write_KBC_command(0x64,0x60)) {return 1;}
+    if(write_KBC_command(0x60, commandByte)) {return 1;}
+
     return 0;
 }

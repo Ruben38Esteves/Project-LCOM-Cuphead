@@ -1,9 +1,17 @@
 #include <lcom/lcf.h>
-
 #include <lcom/lab3.h>
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#include "i8254.h"
+#include "keyboard.h"
+#include "kbc.c"
+#include "timer.c"
+
+extern int counter_KBC;
+extern int timer_counter;
+extern uint8_t scancode;
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -29,61 +37,91 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+
 int(kbd_test_scan)() {
-  // Initialize variables
+  
     int ipc_status;
-    message msg;
     uint8_t irq_set;
-    uint8_t scancode;
+    message msg;
 
-    // Subscribe to keyboard interrupts
-    if (keyboard_subscribe_int(&irq_set) != 0) {
-        return 1;
-    }
+    if(kbc_int_subscribe(&irq_set)) return 1;
 
-    // Main loop to handle keyboard interrupts
-    while (scancode != ESC_BREAKCODE) { // Loop until ESC key is pressed
-        // Get a request message
-        int r = driver_receive(ANY, &msg, &ipc_status);
-        if (r != 0) {
-            printf("driver_receive failed with: %d", r);
+    while(scancode != 0x81){ // a condição de paragem é obter um breakcode da tecla ESC
+
+        if(driver_receive(ANY, &msg, &ipc_status) != 0 ){
+            printf("Error");
             continue;
         }
 
-        // Check if the received message is a notification
-        if (is_ipc_notify(ipc_status)) {
-            switch (_ENDPOINT_P(msg.m_source)) {
-                case HARDWARE: // Hardware interrupt notification
-                    if (msg.m_notify.interrupts & BIT(irq_set)) { // Check if it's from the keyboard
-                        
+        if(is_ipc_notify(ipc_status)) {
+            switch(_ENDPOINT_P(msg.m_source)){
+                 case HARDWARE:
+                    if (msg.m_notify.interrupts & irq_set) {
+                        kbc_ih(); // aumenta o contador interno
+                        kbd_print_scancode(!(scancode & BIT(7)), scancode == 0xE0 ? 2 : 1, &scancode);
                     }
-                    break;
-                default:
-                    break; // No other notifications expected
             }
         }
     }
 
-    // Unsubscribe from keyboard interrupts
-    if (keyboard_unsubscribe_int() != 0) {
-        printf("Failed to unsubscribe from keyboard interrupts\n");
-        return 1;
-    }
+  if (kbc_int_unsubscribe()) return 1;
+  if (kbd_print_no_sysinb(counter_KBC)) return 1;
 
-    return 0;
+  return 0;
 }
 
-
 int(kbd_test_poll)() {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  
+    while (scancode != 0x81) { // a condição de paragem é obter um breakcode da tecla ESC
 
-  return 1;
+        if (!read_KBC_output(0x60, &scancode, 0)) {
+            kbd_print_scancode(!(scancode & MAKE_CODE), scancode == TWO_BYTES ? 2 : 1, &scancode);
+        }   
+    }
+
+  // Restore interrupts
+  return kbc_restore();
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
 
-  return 1;
+    int ipc_status;
+    uint8_t irq_set_TIMER, irq_set_KBC;
+    message msg;
+
+    int seconds = 0;  // timer seconds
+
+    if (timer_subscribe_int(&irq_set_TIMER)) return 1;
+    if (kbc_int_subscribe(&irq_set_KBC)) return 1;
+
+    while (scancode != BREAK_ESC && seconds < n){
+
+        if(driver_receive(ANY, &msg, &ipc_status)){
+            printf("Error");
+            continue;
+        }
+
+        if(is_ipc_notify(ipc_status)) {
+            switch(_ENDPOINT_P(msg.m_source)){
+                 case HARDWARE:
+                    if (msg.m_notify.interrupts & irq_set_KBC) {
+                        kbc_ih();
+                        kbd_print_scancode(!(scancode & MAKE_CODE), scancode == TWO_BYTES ? 2 : 1, &scancode);
+                        seconds = 0;
+                        timer_counter = 0;
+                    }
+                    if (msg.m_notify.interrupts & irq_set_TIMER) {
+                        timer_int_handler();
+                        if (timer_counter % 60 == 0) seconds++;
+                    }
+            }
+        }
+    }
+
+  if (timer_unsubscribe_int()) return 1;
+  if (kbc_int_unsubscribe()) return 1;
+  if (kbd_print_no_sysinb(counter_KBC)) return 1;
+
+  return 0;
 }
+

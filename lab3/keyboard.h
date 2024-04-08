@@ -1,11 +1,16 @@
-#ifndef _LCOM_KEYBOARD_H_
-#define _LCOM_KEYBOARD_H_
 
-int keyboard_subscribe_int(uint8_t *bit_num);
+#ifndef _KEYBOARD_H_
+#define	_KEYBOARD_H_
 
-int keyboard_unsubscribe_int();
+#include <lcom/lcf.h>
+#include <lcom/lab3.h>
 
-int keyboard_read_scancode(uint8_t *scancode);
+int (kbc_int_subscribe)(uint8_t *bit_no);
 
+int (kbc_int_unsubscribe)();
 
-#endif 
+int (kbc_restore)();
+
+void (kbc_ih)();
+
+#endif /**/
