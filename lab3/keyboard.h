@@ -17,3 +17,5 @@ void (kbc_ih)();
 
 int (keyboard_restore_int)();
 
+int (keyboard_write_cmd)(uint8_t port ,uint8_t cmd);
+
