@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+extern int counter_timer;
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -44,7 +45,6 @@ int(timer_test_time_base)(uint8_t timer, uint32_t freq) {
   return flag;
 }
 
-int get_counter();
 
 int(timer_test_int)(uint8_t time) {
   
@@ -68,7 +68,7 @@ int(timer_test_int)(uint8_t time) {
             case HARDWARE: /* hardware interrupt notification */				
                 if (msg.m_notify.interrupts & irq_set) { /* subscribed interrupt */
                     timer_int_handler();
-                    if (get_counter() % 60 == 0) {
+                    if (counter_timer % 60 == 0) {
                       if(timer_print_elapsed_time()) return 1;
                       time--;     
                     }

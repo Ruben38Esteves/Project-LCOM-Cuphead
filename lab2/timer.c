@@ -5,17 +5,10 @@
 
 #include "i8254.h"
 
-int hook_id = 0;
+int hook_id_timer = 0;
 
-int counter = 0;
+int counter_timer = 0;
 
-int get_counter() {
-    return counter;
-}
-
-void set_counter(int a) {
-    counter = a;
-}
 
 int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
   uint32_t MIN_FREQ = TIMER_FREQ / 65535;
@@ -55,20 +48,20 @@ int (timer_set_frequency)(uint8_t timer, uint32_t freq) {
 
 int (timer_subscribe_int)(uint8_t *bit_no) {
   if (bit_no == NULL) return 1;
-  *bit_no = BIT(hook_id);
-  int flag = sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &hook_id);
+  *bit_no = BIT(hook_id_timer);
+  int flag = sys_irqsetpolicy(TIMER0_IRQ, IRQ_REENABLE, &hook_id_timer);
 
   return flag;
 }
 
 int (timer_unsubscribe_int)() {
-  int flag = sys_irqrmpolicy(&hook_id);
+  int flag = sys_irqrmpolicy(&hook_id_timer);
 
   return flag;
 }
 
 void (timer_int_handler)() {
-  counter++;
+  counter_timer++;
 }
 
 int (timer_get_conf)(uint8_t timer, uint8_t *st) {
