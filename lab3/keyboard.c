@@ -48,7 +48,7 @@ int (keyboard_read_output)(uint8_t* output){
 }
 
 void (kbc_ih)(){
-  if(keyboard_read_output(&scancode)) 
+  if(keyboard_read_output(&scancode))
     return;
 }
 

@@ -21,7 +21,6 @@
 
 
 
-
 #define MAX_ATTEMPTS 10
 #define DELAY_US 20000
 

@@ -1,3 +1,6 @@
+#ifndef MOUSE_H_
+#define MOUSE_H_
+
 #include <lcom/lcf.h>
 #include <stdint.h>
 #include "i8042.h"
@@ -23,3 +26,4 @@ void (mouse_generate_packet)();
 
 void (mouse_bytes_sync)();
 
+#endif

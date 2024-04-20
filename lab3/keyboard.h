@@ -1,3 +1,6 @@
+#ifndef KEYBOARD_H_
+#define KEYBOARD_H_
+
 #include <lcom/lcf.h>
 #include <stdint.h>
 #include "i8042.h"
@@ -19,3 +22,4 @@ int (keyboard_restore_int)();
 
 int (keyboard_write_cmd)(uint8_t port ,uint8_t cmd);
 
+#endif
