@@ -1,6 +1,10 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
-        "i8254.h": "c"
+        "i8254.h": "c",
+        "graphs.h": "c",
+        "stdio.h": "c",
+        "stdint.h": "c",
+        "lab5.h": "c"
     }
 }

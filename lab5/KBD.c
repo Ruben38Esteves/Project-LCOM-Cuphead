@@ -1,4 +1,5 @@
 #include "KBD.h"
+#include "KBC.c"
 int kbd_hook_id=1;
 uint8_t scancode;
 int(kbd_subscribe_int)(uint8_t* bit_no){
@@ -29,14 +30,14 @@ void (kbc_ih)(){
 //ESCREVE NO 0X60 O CODIGO QUE FOI BUSCAR
 int (keyboard_restore)(){
     uint8_t comando;
-    if(KBC_write_comm(0x20,0x64)!=0)
+    if(KBC_write_comm(0x64,0x20)!=0)
       return 1;
     if(KBC_read_output(0x60,&comando, 0)!=0)
       return 1;
     comando |= BIT(0);
-    if(KBC_write_comm(0x60,0x64)!=0)
+    if(KBC_write_comm(0x64,0x60)!=0)
       return 1;
-    if(KBC_write_comm(comando, 0X60)!=0)
+    if(KBC_write_comm( 0X60,comando)!=0)
       return 1;
     return 0;
 }

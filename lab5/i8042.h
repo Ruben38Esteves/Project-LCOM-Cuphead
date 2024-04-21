@@ -8,6 +8,7 @@
 
 // defines do livro
 
+
 #define STATUS_PORT 0x64
 #define KBD_OUT_BUF 0x60
 #define KBD_INPT_BUF 0x60
