@@ -104,3 +104,38 @@ int normalize_color(uint32_t color, uint32_t *new_color) {
   }
   return 0;
 }
+
+
+// Funções auxiliares da video_test_pattern()
+
+uint32_t (Red)(unsigned j, uint8_t step, uint32_t first) {
+  return (R(first) + j * step) % (1 << info.RedMaskSize);
+}
+
+uint32_t (Green)(unsigned i, uint8_t step, uint32_t first) {
+  return (G(first) + i * step) % (1 << info.GreenMaskSize);
+}
+
+uint32_t (Blue)(unsigned j, unsigned i, uint8_t step, uint32_t first) {
+  return (B(first) + (i + j) * step) % (1 << info.BlueMaskSize);
+}
+
+uint32_t (direct_mode)(uint32_t R, uint32_t G, uint32_t B) {
+  return (R << info.RedFieldPosition) | (G << info.GreenFieldPosition) | (B << info.BlueFieldPosition);
+}
+
+uint32_t (indexed_mode)(uint16_t col, uint16_t row, uint8_t step, uint32_t first, uint8_t n) {
+  return (first + (row * n + col) * step) % (1 << info.BitsPerPixel);
+}
+
+uint32_t (R)(uint32_t first){
+  return ((1 << info.RedMaskSize) - 1) & (first >> info.RedFieldPosition);
+}
+
+uint32_t (G)(uint32_t first){
+  return ((1 << info.GreenMaskSize) - 1) & (first >> info.GreenFieldPosition);
+}
+
+uint32_t (B)(uint32_t first){
+  return ((1 << info.BlueMaskSize) - 1) & (first >> info.BlueFieldPosition);
+}
