@@ -50,36 +50,33 @@ int main(int argc, char *argv[]) {
 }
 
 
+
 int (mouse_test_packet)(uint32_t cnt) {
-    /* To be completed */
-    int ipc_status;
+  int ipc_status;
   message msg;
-  uint8_t mouse_mask;
+  uint8_t mask; 
 
+  if (mouse_write(0xF4) != 0) 
+    return 1; 
+  if (mouse_subscribe_int(&mask) != 0) 
+    return 1;
 
-  if (mouse_subscribe_int(&mouse_mask)  ) return 1;
-
-  // Ativar o report de dados do rato com
-  // A -> Função implementada de raíz
-  // B -> Função dada pelos professores
-  if (mouse_write(0xF4)  ) return 1; // A
-  //if (mouse_enable_data_reporting()  ) return 1; // B
 
   while (cnt) { 
 
-    if (driver_receive(ANY, &msg, &ipc_status)  ){
+    if (driver_receive(ANY, &msg, &ipc_status) != 0){
       printf("Error");
-      continue;
+        continue;
     }
 
     if (is_ipc_notify(ipc_status)){
       switch(_ENDPOINT_P(msg.m_source)){
         case HARDWARE: 
-          if (msg.m_notify.interrupts & mouse_mask){  
-            mouse_ih();                               
+          if (msg.m_notify.interrupts & mask){  
+            mouse_ih();                          
             mouse_sync_bytes();                       
-            if (byte_index == 3) {                   
-              mouse_bytes_to_packet();               
+            if (byte_index == 3) {                    
+              mouse_bytes_to_packet();            
               mouse_print_packet(&mouse_packet);      
               byte_index = 0;
               cnt--;
@@ -90,34 +87,35 @@ int (mouse_test_packet)(uint32_t cnt) {
     }
   }
   
-  if (mouse_write(0xF5)) return 1;
 
-  if (mouse_unsubscribe_int()) return 1;
- 
+  
+
+  if (mouse_unsubscribe_int() != 0) 
+    return 1;
+  if (mouse_write(0xF5) != 0) 
+    return 1;
+  
   return 0;
 }
 
+
 int (mouse_test_async)(uint8_t idle_time) {
-    /* To be completed */
     int ipc_status;
   message msg;
-  uint8_t seconds = 0;
-  uint8_t mouse_mask = 0, timer_mask = 0; 
-  uint16_t timer_frequency = sys_hz();
+  uint8_t time = 0;
+  uint8_t mask = 0, timer_mask = 0; 
+  uint16_t frequency = sys_hz();
 
+  if (mouse_write(0xF4) != 0) 
+    return 1;
+  if (mouse_subscribe_int(&mask) != 0) 
+    return 1;
+  if (timer_subscribe_int(&timer_mask) != 0) 
+    return 1;
 
-  if (mouse_subscribe_int(&mouse_mask)  ) return 1;
-  if (timer_subscribe_int(&timer_mask)  ) return 1;
+  while (time < idle_time) {
 
-  // Ativar o report de dados do rato com
-  // A -> Função implementada de raíz
-  // B -> Função dada pelos professores
-  if (mouse_write(0xF4)  ) return 1; // A
-  //if (mouse_enable_data_reporting()  ) return 1; // B
-
-  while (seconds < idle_time) { 
-
-    if (driver_receive(ANY, &msg, &ipc_status)  ){
+    if (driver_receive(ANY, &msg, &ipc_status) != 0){
       printf("Error");
       continue;
     }
@@ -128,31 +126,36 @@ int (mouse_test_async)(uint8_t idle_time) {
 
           if (msg.m_notify.interrupts & timer_mask) { 
             timer_int_handler();
-            if (timer_counter % timer_frequency == 0) seconds++;
+            if (timer_counter % frequency == 0) 
+              time++;
           }
 
-          if (msg.m_notify.interrupts & mouse_mask){  
+          if (msg.m_notify.interrupts & mask){  
             mouse_ih();                               
             mouse_sync_bytes();                       
             if (byte_index == 3) {                    
-              mouse_bytes_to_packet();                
+              mouse_bytes_to_packet();               
               mouse_print_packet(&mouse_packet);      
               byte_index = 0;
             }
-            seconds = 0;
+            time = 0;
             timer_counter = 0;
           }
       }
     }
   }
 
-  if (mouse_write(0xF5)  ) return 1;
 
-  if (timer_unsubscribe_int()  ) return 1;
-  if (mouse_unsubscribe_int()  ) return 1;
+  if (timer_unsubscribe_int() != 0) 
+    return 1;
+  if (mouse_unsubscribe_int() != 0) 
+    return 1;
+  if (mouse_write(0xF5) != 0) 
+    return 1;
 
   return 0;
 }
+
 
 
 int (mouse_test_remote)(uint16_t period, uint8_t cnt) {
