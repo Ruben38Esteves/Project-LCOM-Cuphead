@@ -86,11 +86,12 @@ int (timer_display_conf)(uint8_t timer, uint8_t st, enum timer_status_field fiel
     break;
   
   default:
-    break;
+    return 1;
+    
   }
 
-  if(timer_print_config(timer, field, data)) {return 1;}
+  if(timer_print_config(timer, field, data)==0) {return 0;}
 
-  return 0;
+  return 1;
 
 }
