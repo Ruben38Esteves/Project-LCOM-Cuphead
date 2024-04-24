@@ -66,7 +66,7 @@ int(timer_test_int)(uint8_t time) {
     if (is_ipc_notify(ipc_status)) { /* received notification */
         switch (_ENDPOINT_P(msg.m_source)) {
             case HARDWARE: /* hardware interrupt notification */	
-                if (msg.m_notify.interrupts & irq_set) {
+                if (msg.m_notify.interrupts & irq_set) { // 00000001
                   timer_int_handler();
                   if(counter%sys_hz()==0){
                     timer_print_elapsed_time();

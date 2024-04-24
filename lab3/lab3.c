@@ -34,6 +34,8 @@ uint32_t kbd_sysinb_cnt = 0;
 
 extern uint8_t scancode;
 
+extern int counter;
+
 int(kbd_test_scan)() {
 
   int ipc_status;
@@ -76,8 +78,40 @@ int(kbd_test_poll)() {
 }
 
 int(kbd_test_timed_scan)(uint8_t n) {
-  /* To be completed by the students */
-  printf("%s is not yet implemented!\n", __func__);
+  int ipc_status;
+  uint8_t irq_set_kbd, irq_set_tmr;
+  message msg;
+  uint8_t time = n;
 
-  return 1;
+  if(keyboard_subscribe_interruption(&irq_set_kbd)) return 1;
+  if(timer_subscribe_interruption(&irq_set_tmr)) return 1;
+
+  while(scancode != 0x81 && time >= 0){ // a condição de paragem é obter um breakcode da tecla ESC
+
+    if( driver_receive(ANY, &msg, &ipc_status) != 0 ){
+        printf("Error");
+        continue;
+    }
+
+    if(is_ipc_notify(ipc_status)) {
+      switch(_ENDPOINT_P(msg.m_source)){
+        case HARDWARE:
+          if (msg.m_notify.interrupts & irq_set_kbd) {
+            time = n;
+            kbd_ih();
+            kbd_print_scancode(!(scancode & BIT(7)), scancode == 0xE0 ? 2 : 1, &scancode);
+          }
+          if (msg.m_notify.interrupts & irq_set_tmr) {
+            tmr_ih();
+            if(counter%sys_hz()==0){
+              time--;
+            }
+          }
+      }
+    }
+  }
+  if(kbd_print_no_sysinb(kbd_sysinb_cnt)) return 1;
+  if(timer_unsubscribe_interruption()) return 1;
+  if(keyboard_unsubscribe_interruption()) return 1;
+  return 0;
 }
