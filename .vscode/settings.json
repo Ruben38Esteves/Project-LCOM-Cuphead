@@ -85,6 +85,8 @@
     "stop_token": "c",
     "streambuf": "c",
     "tuple": "c",
-    "keyboard.h": "c"
+    "keyboard.h": "c",
+    "int86.h": "c",
+    "pixmap.h": "c"
   }
 }
