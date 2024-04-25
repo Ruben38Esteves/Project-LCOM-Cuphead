@@ -63,7 +63,7 @@ int normalize_colour(uint32_t color, uint32_t *new_colour) {
 int(draw_pixel)(uint16_t x, uint16_t y, uint32_t colour) {
   if (x > current_mode.XResolution || y > current_mode.YResolution) {
     printf("Invalid coordinates");
-    return 1;
+    return 0;
   }
   uint32_t BytesPP = (current_mode.BitsPerPixel + 7) / 8;
   uint32_t index = ((y * current_mode.XResolution) + x) * BytesPP;
@@ -71,8 +71,6 @@ int(draw_pixel)(uint16_t x, uint16_t y, uint32_t colour) {
     printf("Clouldn't copy colour to index");
     return 1;
   }
-
-  printf("completed mmcpy \n");
   return 0;
 }
 
@@ -83,7 +81,6 @@ int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
       return 1;
     }
   }
-  printf("drew a line");
   return 0;
 }
 
@@ -94,6 +91,5 @@ int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
       return 1;
     }
   }
-  	printf("drew a rectangle");
   return 0;
 }
