@@ -39,6 +39,20 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+uint32_t get_colour_for_pattern(int i, int j, uint32_t first, uint8_t step){
+  // get originals
+  uint8_t red = 0xFF & (first >> 16);
+  uint8_t green = 0xFF & (first >> 8);
+  uint8_t blue = 0xFF & first;
+  // calc new values
+  red = (red + i * step) % (1 << current_mode.RedMaskSize);
+  green = (green + j * step) % (1 << current_mode.GreenMaskSize);
+  blue = (blue + (i+j) * step) % (1 << current_mode.BlueMaskSize);
+
+  uint32_t new_colour = (red << 16) | (green << 8) | blue;
+  return new_colour;
+}
+
 int (wait_for_esc)() {
 
   int ipc_status;
@@ -70,10 +84,12 @@ int (wait_for_esc)() {
 
 int(video_test_init)(uint16_t mode, uint8_t delay) {
   if(set_graphics_mode(mode)){
+    printf("Failed to set graphics mode");
     return 1;
   }
   sleep(delay);
   if(vg_exit()){
+    printf("Failed exiting video mode");
     return 1;
   }
   return 0;
@@ -83,39 +99,67 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
                           uint16_t width, uint16_t height, uint32_t color) {
 
   if(map_video_memory(mode)){
+    printf("Failed to map video memory");
     return 1;
   }
-  printf("mapped");
   if(set_graphics_mode(mode)){
+    printf("Failed to set graphics mode");
     return 1;
   }
-  printf("setted");
   uint32_t new_colour;
   if(normalize_colour(color, &new_colour)){
+    printf("Failed to normalize colour");
     return 1;
   }
-  printf("normalized");
   if(vg_draw_rectangle(x,y,width,height,new_colour)){
+    printf("Failed to draw rectangle");
     return 1;
   }
-  printf("rectangled");
   if(wait_for_esc()){
+    printf("Failed in waiting for ESC");
     return 1;
   }
-  printf("waited");
   if(vg_exit()){
+    printf("Failed exiting video mode");
     return 1;
   }
-  printf("exited");
   return 0;
 }
 
 int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, uint8_t step) {
-  /* To be completed */
-  printf("%s(0x%03x, %u, 0x%08x, %d): under construction\n", __func__,
-         mode, no_rectangles, first, step);
-
-  return 1;
+  if(map_video_memory(mode)){
+    printf("Failed to map video memory");
+    return 1;
+  }
+  if(set_graphics_mode(mode)){
+    printf("Failed to set graphics mode");
+    return 1;
+  }
+  uint32_t color;
+  uint16_t rec_width = current_mode.XResolution / no_rectangles;
+  uint16_t rec_height = current_mode.YResolution / no_rectangles;
+  for(int i = 0; i < no_rectangles; i++){
+    for(int j = 0; j < no_rectangles; j++){
+      if(mode == 0x105){
+        color = (first + (j * no_rectangles + i) * step) % (1 << current_mode.BitsPerPixel);
+      }else{
+        color = get_colour_for_pattern(i,j,first,step);
+      }
+      if(vg_draw_rectangle(i*rec_width,j*rec_height,rec_width,rec_height,color)){
+        printf("Failed to draw rectangle");
+        return 1;
+      }
+    }
+  }
+  if(wait_for_esc()){
+    printf("Failed in waiting for ESC");
+    return 1;
+  }
+  if(vg_exit()){
+    printf("Failed exiting video mode");
+    return 1;
+  }
+  return 0;
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
