@@ -93,3 +93,31 @@ int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
   }
   return 0;
 }
+
+
+
+uint32_t get_colour_for_pattern(int i, int j, uint32_t first, uint8_t step){
+  // get originals
+  uint8_t red = 0xFF & (first >> 16);
+  uint8_t green = 0xFF & (first >> 8);
+  uint8_t blue = 0xFF & first;
+  // calc new values
+  red = (red + i * step) % (1 << current_mode.RedMaskSize);
+  green = (green + j * step) % (1 << current_mode.GreenMaskSize);
+  blue = (blue + (i+j) * step) % (1 << current_mode.BlueMaskSize);
+
+  uint32_t new_colour = (red << 16) | (green << 8) | blue;
+  return new_colour;
+}
+
+int (draw_xpm)(uint16_t x, uint16_t y, uint8_t *colour, uint16_t width, uint16_t height){
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      if(draw_pixel(x+j,y+i,*colour)){
+        return 1;
+      }
+      colour++;
+    }
+  }
+  return 0;
+}

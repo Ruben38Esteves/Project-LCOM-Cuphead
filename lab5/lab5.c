@@ -39,20 +39,6 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-uint32_t get_colour_for_pattern(int i, int j, uint32_t first, uint8_t step){
-  // get originals
-  uint8_t red = 0xFF & (first >> 16);
-  uint8_t green = 0xFF & (first >> 8);
-  uint8_t blue = 0xFF & first;
-  // calc new values
-  red = (red + i * step) % (1 << current_mode.RedMaskSize);
-  green = (green + j * step) % (1 << current_mode.GreenMaskSize);
-  blue = (blue + (i+j) * step) % (1 << current_mode.BlueMaskSize);
-
-  uint32_t new_colour = (red << 16) | (green << 8) | blue;
-  return new_colour;
-}
-
 int (wait_for_esc)() {
 
   int ipc_status;
@@ -163,10 +149,32 @@ int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, ui
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-  /* To be completed */
-  printf("%s(%8p, %u, %u): under construction\n", __func__, xpm, x, y);
-
-  return 1;
+  if(map_video_memory(0x105)){
+    printf("Failed to map video memory");
+    return 1;
+  }
+  if(set_graphics_mode(0x105)){
+    printf("Failed to set graphics mode");
+    return 1;
+  }
+  xpm_image_t image;
+  memset(&image, 0, sizeof(image));
+  uint8_t *colour = xpm_load(xpm, XPM_INDEXED, &image);
+  uint16_t width = image.width;
+  uint16_t height = image.height;
+  if(draw_xpm(x,y,colour,width,height)){
+    printf("failed to draw xpm");
+    return 1;
+  }
+  if(wait_for_esc()){
+    printf("Failed in waiting for ESC");
+    return 1;
+  }
+  if(vg_exit()){
+    printf("Failed exiting video mode");
+    return 1;
+  }
+  return 0;
 }
 
 int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint16_t yf,
