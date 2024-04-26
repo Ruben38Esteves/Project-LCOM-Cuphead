@@ -205,6 +205,7 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
     return 1;
   }
   uint32_t freq = 0x000000 | fr_rate;
+  printf("%u",freq);
   if (timer_set_frequency(0, freq)) {
     return 1;
   }
@@ -241,7 +242,7 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
           if (msg.m_notify.interrupts & timer_mask) {
 
             if (original_speed > 0) {
-              if (vg_draw_rectangle(xi, yi, width, height, 0x000000)) {
+              if (vg_draw_rectangle(xi, yi, width, height, 0xF00000)) {
                 return 1;
               }
               if (vertical_direction == 1) {
@@ -262,7 +263,7 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
             }
             else {
               if (speed == 0) {
-                if (vg_draw_rectangle(xi, yi, width, height, 0xFFFFFF)) {
+                if (vg_draw_rectangle(xi, yi, width, height, 0xF00000)) {
                   return 1;
                 }
                 if (vertical_direction == 1) {
