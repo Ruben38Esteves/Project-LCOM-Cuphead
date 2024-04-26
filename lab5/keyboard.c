@@ -138,8 +138,9 @@ int (timer_subscribe_interruption)(uint8_t *bit_no){
 int (timer_unsubscribe_interruption)(){
   return sys_irqrmpolicy(&tmr_hook_id);
 }
-
+/*
 int counter = 0;
 void (tmr_ih)(){
   counter++;
 }
+*/
