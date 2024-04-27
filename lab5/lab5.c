@@ -10,8 +10,11 @@
 
 #include "graphics.h"
 #include "keyboard.h"
+#include "timer.c"
 
 extern uint8_t scancode;
+extern vbe_mode_info_t info;
+
 
 
 int main(int argc, char *argv[]) {
@@ -96,35 +99,221 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
 
 
   return 0;
+
 }
 
 int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, uint8_t step) {
-  /* To be completed */
-  printf("%s(0x%03x, %u, 0x%08x, %d): under construction\n", __func__,
-         mode, no_rectangles, first, step);
+  
+    if (set_buffer(mode) != 0)
+    return 1;
 
-  return 1;
+  if (set_graphic_mode(mode) != 0)
+    return 1;
+
+  
+  int y_rectangles = info.YResolution / no_rectangles;
+  int x_rectangles = info.XResolution / no_rectangles;
+
+  for (int i = 0 ; i < no_rectangles ; i++) {
+    for (int j = 0 ; j < no_rectangles ; j++) {
+
+      uint32_t color;
+
+      if (info.MemoryModel == 0x06) {
+        uint32_t R = Red(j, step, first);
+        uint32_t G = Green(i, step, first);
+        uint32_t B = Blue(j, i, step, first);
+        
+        color = direct_mode(R, G, B);
+
+      } 
+      else {
+        color = indexed_mode(j, i, step, first, no_rectangles);
+      }
+
+      if (vg_draw_rectangle(j * x_rectangles, i * y_rectangles, x_rectangles, y_rectangles, color) != 0){
+        vg_exit();
+        return 1;
+      }
+    
+    }
+  }
+
+
+
+  int ipc_status;
+  message msg;
+  uint8_t kbd_irq_set;
+
+  if(keyboard_subscribe_int(&kbd_irq_set) != 0) 
+    return 1;
+
+  while (scancode != ESC_BREAKCODE){
+      if (driver_receive(ANY, &msg, &ipc_status) != 0) { 
+        printf("driver_receive failed");
+        continue;
+      }
+      if (is_ipc_notify(ipc_status)) {
+        switch (_ENDPOINT_P(msg.m_source)) {
+            case HARDWARE: 
+              if (msg.m_notify.interrupts & kbd_irq_set) {
+                  kbc_ih();
+                  break;
+              }
+            default:
+                break; 
+        }
+      }
+  }
+
+  if(keyboard_unsubscribe_int() != 0)
+    return 1;
+
+  if (vg_exit() != 0)
+    return 1;
+
+
+  return 0;
 }
 
 int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
-  /* To be completed */
-  printf("%s(%8p, %u, %u): under construction\n", __func__, xpm, x, y);
+  
+  if (set_buffer(0x105) != 0)
+    return 1;
 
-  return 1;
+  if (set_graphic_mode(0x105) != 0)
+    return 1;
+
+  if (draw_xpm(xpm, x, y) != 0)
+    return 1;
+
+  int ipc_status;
+  message msg;
+  uint8_t kbd_irq_set;
+
+  if(keyboard_subscribe_int(&kbd_irq_set) != 0) 
+    return 1;
+
+  while (scancode != ESC_BREAKCODE){
+      if (driver_receive(ANY, &msg, &ipc_status) != 0) { 
+        printf("driver_receive failed");
+        continue;
+      }
+      if (is_ipc_notify(ipc_status)) {
+        switch (_ENDPOINT_P(msg.m_source)) {
+            case HARDWARE: 
+              if (msg.m_notify.interrupts & kbd_irq_set) {
+                  kbc_ih();
+                  break;
+              }
+            default:
+                break; 
+        }
+      }
+  }
+
+  if(keyboard_unsubscribe_int() != 0)
+    return 1;
+
+  if (vg_exit() != 0)
+    return 1;
+
+
+  return 0;
 }
 
 int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint16_t yf,
                      int16_t speed, uint8_t fr_rate) {
-  /* To be completed */
-  printf("%s(%8p, %u, %u, %u, %u, %d, %u): under construction\n",
-         __func__, xpm, xi, yi, xf, yf, speed, fr_rate);
 
-  return 1;
+  if (set_buffer(0x105) != 0)
+    return 1;
+
+  if (set_graphic_mode(0x105) != 0)
+    return 1;
+
+
+  int ipc_status;
+  message msg;
+  uint8_t kbd_irq_set, timer_irq_set;
+
+  if (keyboard_subscribe_int(&kbd_irq_set) != 0) 
+    return 1;
+
+  if (timer_set_frequency(0, fr_rate) != 0)
+    return 1;
+
+  if (timer_subscribe_int(&timer_irq_set) != 0)
+    return 1;
+
+  if (draw_xpm(xpm, xi, yi) != 0)
+    return 1;
+
+  bool horizontal;
+
+  if (xi == xf)
+    horizontal = false;
+  else
+    horizontal = true;
+
+
+  while (scancode != ESC_BREAKCODE){
+      if (driver_receive(ANY, &msg, &ipc_status) != 0) { 
+        printf("driver_receive failed");
+        continue;
+      }
+      if (is_ipc_notify(ipc_status)) {
+        switch (_ENDPOINT_P(msg.m_source)) {
+            case HARDWARE: 
+              if (msg.m_notify.interrupts & kbd_irq_set) {
+                  kbc_ih();
+                  break;
+              }
+
+              if (msg.m_notify.interrupts & timer_irq_set) {
+                  if(vg_draw_rectangle(xi, yi, 200, 200, 0) != 0)
+                    return 1;
+
+                  if (horizontal){
+                    xi += speed;
+                    if (xi > xf) //parar o movimento
+                      xi = xf;
+                  }
+                  else{
+                    yi += speed;
+                    if (yi > yf) //parar o movimento
+                      yi = yf;
+                  }
+
+                  if(draw_xpm(xpm, xi, yi) != 0)
+                    return 1;
+
+                  break;
+              }
+            default:
+                break; 
+        }
+      }
+  }
+
+  if(timer_unsubscribe_int() != 0)
+    return 1;
+
+  if(keyboard_unsubscribe_int() != 0)
+    return 1;
+
+  if (vg_exit() != 0)
+    return 1;
+
+
+  return 0;
+  
 }
 
-int(video_test_controller)() {
-  /* To be completed */
+/*int(video_test_controller)() {
+  // To be completed 
   printf("%s(): under construction\n", __func__);
 
   return 1;
 }
+*/
+
