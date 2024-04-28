@@ -45,5 +45,5 @@ lab5.o: lab5.c /usr/include/lcom/lcf.h /usr/include/stdbool.h \
   /usr/include/lcom/lab4.h /usr/include/lcom/lab5.h \
   /usr/include/lcom/pixmap.h /usr/include/lcom/xpm.h \
   /usr/include/lcom/vbe.h /usr/include/lcom/video_gr.h \
-  /usr/include/lcom/proj.h /usr/include/lcom/types.h graphics.c kbc.h \
+  /usr/include/lcom/proj.h /usr/include/lcom/types.h video_gr.c kbc.h \
   keyboard.h

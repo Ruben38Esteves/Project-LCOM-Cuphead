@@ -1,4 +1,5 @@
 
+#include <lcom/lcf.h>
 
 vbe_mode_info_t info;
 uint8_t *video_mem;
@@ -39,10 +40,19 @@ int (draw_pixel)(uint16_t x, uint16_t y, uint32_t color) {
 }
 
 
-int (draw_horizontal_line)(uint16_t len, uint16_t x, uint16_t y, uint32_t color) {
+int (vg_draw_hline)(uint16_t len, uint16_t x, uint16_t y, uint32_t color) {
   for (unsigned i = 0 ; i < len ; i++)   
     if (draw_pixel(x+i, y, color) != 0) return 1;
   return 0;
+}
+
+int (vg_draw_rectangle)(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
+  for(unsigned i = 0; i < height ; i++)
+    if (vg_draw_hline(width, x, y+i, color) != 0) {
+      vg_exit();
+      return 1;
+    }
+    return 0;
 }
 
 
@@ -59,27 +69,27 @@ int normalize_color(uint32_t color, uint32_t *new_color) {
 
 int (set_frame_buffer)(uint16_t mode){
 
-    //vou buscar a informação do modo
+    
     memset(&info, 0, sizeof(info));
     if(vbe_get_mode_info(mode, &info)) 
         return 1;
 
-    // cálculo do tamanho do frame buffer
+    
     unsigned int bytes_per_pixel = (info.BitsPerPixel + 7) / 8;
     unsigned int vram_size = info.XResolution * info.YResolution * bytes_per_pixel;
     
-    // endereços físicos
+    
     struct minix_mem_range mr;
-    mr.mr_base = info.PhysBasePtr; //inicio
-    mr.mr_limit = mr.mr_base + vram_size; // fim 
+    mr.mr_base = info.PhysBasePtr; 
+    mr.mr_limit = mr.mr_base + vram_size;
     int r;
     
-    //mem fisica
+   
     if ((r=sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr))!=0) {
         panic("sys_privctl (ADD_MEM) failed: %d\n", r);
         return 1;
     }
-    //mem virtual
+    
     video_mem = vm_map_phys(SELF, (void*) mr.mr_base, vram_size);
     if(video_mem == MAP_FAILED){
         panic("couldn’t map video memory");
@@ -88,7 +98,7 @@ int (set_frame_buffer)(uint16_t mode){
     return 0;
 }
 
-// Funções auxiliares da video_test_pattern()
+
 
 uint32_t (R)(uint32_t first){
   return ((1 << info.RedMaskSize) - 1) & (first >> info.RedFieldPosition);

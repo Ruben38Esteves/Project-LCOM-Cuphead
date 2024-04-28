@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <graphics.c>
+#include <video_gr.c>
 #include "kbc.h"
 #include "keyboard.h"
 
@@ -106,11 +106,7 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
   if (normalize_color(color, &new_color) != 0) return 1;
 
 
-  for(unsigned i = 0; i < height ; i++)
-    if (draw_horizontal_line(width, x, y+i, color) != 0) {
-      vg_exit();
-      return 1;
-    }
+  if(vg_draw_rectangle(width, x,  y, color)) {return 1;}
 
   if(wait_ESC()) {return 1;}
 
@@ -147,7 +143,7 @@ int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, ui
       }
 
       for(int a = 0; a < vertical ; a++)
-        if (draw_horizontal_line(j*horizontal, (i*vertical)+a, horizontal, color) != 0) {
+        if (vg_draw_hline(j*horizontal, (i*vertical)+a, horizontal, color) != 0) {
           vg_exit();
           return 1;
         }
