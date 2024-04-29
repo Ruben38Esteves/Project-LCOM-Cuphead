@@ -5,9 +5,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+
 #include <video_gr.c>
-#include "kbc.h"
 #include "keyboard.h"
+#include "timer.c"
 
 
 // Any header files included below this line should have been created by you
@@ -16,6 +17,7 @@ extern vbe_mode_info_t info;
 extern uint8_t *video_mem;
 
 extern uint8_t scancode;
+extern int timer_counter;
 
 int main(int argc, char *argv[]) {
   // sets the language of LCF messages (can be either EN-US or PT-PT)
@@ -48,7 +50,7 @@ int(video_test_init)(uint16_t mode, uint8_t delay) {
 
   memset(&reg86p, 0, sizeof(reg86p));
 
-  reg86p.ax= 0x4F03; // set ax with 16 bit value
+  reg86p.ax= 0x4F02; // set ax with 16 bit value
   reg86p.bx = 1<<14|mode; 
   reg86p.intno = 0x10;
 
@@ -106,7 +108,7 @@ int(video_test_rectangle)(uint16_t mode, uint16_t x, uint16_t y,
   if (normalize_color(color, &new_color) != 0) return 1;
 
 
-  if(vg_draw_rectangle(width, x,  y, color)) {return 1;}
+  if(vg_draw_rectangle( x,  y, width, height, new_color)) {return 1;}
 
   if(wait_ESC()) {return 1;}
 
@@ -142,11 +144,7 @@ int(video_test_pattern)(uint16_t mode, uint8_t no_rectangles, uint32_t first, ui
         color = indexed_mode(j, i, step, first, no_rectangles);
       }
 
-      for(int a = 0; a < vertical ; a++)
-        if (vg_draw_hline(j*horizontal, (i*vertical)+a, horizontal, color) != 0) {
-          vg_exit();
-          return 1;
-        }
+      if(vg_draw_rectangle(j * horizontal, i * vertical, horizontal, vertical, color)) {return 1;}
     }
   }
 
@@ -177,10 +175,90 @@ int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
 int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint16_t yf,
                      int16_t speed, uint8_t fr_rate) {
   /* To be completed */
-  printf("%s(%8p, %u, %u, %u, %u, %d, %u): under construction\n",
-         __func__, xpm, xi, yi, xf, yf, speed, fr_rate);
+  int ipc_status;
+  message msg;
+  uint8_t irq_set_TIMER, irq_set_KBC; 
 
-  return 1;
+  
+  bool horizontal;
+
+  if (xi == xf && yi<yf)
+    horizontal = false;
+  else if(yi==yf && xi<xf)
+    horizontal = true;
+  else {return 1;}
+
+
+ 
+  if (kbc_int_subscribe(&irq_set_KBC) != 0) return 1;
+  if (timer_subscribe_int(&irq_set_TIMER) != 0) return 1;
+
+  
+  if (timer_set_frequency(0, fr_rate) != 0) return 1;   
+
+ 
+  if(set_frame_buffer(0x105)) return 1;
+
+  
+  if(setting_the_graphic_mode(0x105)) return 1; 
+
+  
+  if (draw_xpm(xi, yi, xpm) != 0) return 1;
+
+  while (scancode != 0x81) {
+
+      if( driver_receive(ANY, &msg, &ipc_status) != 0 ){
+          printf("Error");
+          continue;
+      }
+
+      if(is_ipc_notify(ipc_status)) {
+          switch(_ENDPOINT_P(msg.m_source)){
+              case HARDWARE:
+
+                
+                if (msg.m_notify.interrupts & irq_set_KBC) {
+                    kbc_ih(); 
+                   
+                }
+
+                
+                if (msg.m_notify.interrupts & irq_set_TIMER) {
+
+                    
+                    if (vg_draw_rectangle(xi, yi, 200, 200, 0x0) != 0) return 1;
+
+                    
+                    if (horizontal){
+                    xi += speed;
+                    if (xi > xf) //parar o movimento
+                      xi = xf;
+                  }
+                  else{
+                    yi += speed;
+                    if (yi > yf) //parar o movimento
+                      yi = yf;
+                  }
+
+
+                    
+                    if (draw_xpm(xi, yi, xpm) != 0) return 1;
+                    
+                }
+             
+
+          }
+      }
+  }
+
+  
+  if (vg_exit() != 0) return 1;
+
+  
+  if (timer_unsubscribe_int() != 0) return 1;
+  if (kbc_int_unsubscribe() != 0) return 1;
+
+  return 0;
 }
 
 int(video_test_controller)() {

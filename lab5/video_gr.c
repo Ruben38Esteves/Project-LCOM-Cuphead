@@ -82,11 +82,10 @@ int (set_frame_buffer)(uint16_t mode){
     struct minix_mem_range mr;
     mr.mr_base = info.PhysBasePtr; 
     mr.mr_limit = mr.mr_base + vram_size;
-    int r;
+   
     
    
-    if ((r=sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr))!=0) {
-        panic("sys_privctl (ADD_MEM) failed: %d\n", r);
+    if (sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr)!=0) {
         return 1;
     }
     
