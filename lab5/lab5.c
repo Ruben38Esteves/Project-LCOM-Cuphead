@@ -185,7 +185,7 @@ int(video_test_xpm)(xpm_map_t xpm, uint16_t x, uint16_t y) {
 int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint16_t yf,
                      int16_t speed, uint8_t fr_rate) {
 
-  int ipc_status;
+  int ipc_status, r;
   message msg;
   uint8_t keyboard_mask, timer_mask;
   uint8_t vertical_direction;
@@ -205,11 +205,9 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
     return 1;
   }
   uint32_t freq = 0x000000 | fr_rate;
-  printf("%u",freq);
   if (timer_set_frequency(0, freq)) {
     return 1;
   }
-
   if (map_video_memory(0x105)) {
     printf("Failed to map video memory");
     return 1;
@@ -230,19 +228,22 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
     return 1;
   }
 
-  while (scancode != 0x81 && (xi < xf || yi < yf)) {
-    if (driver_receive(ANY, &msg, &ipc_status) != 0) {
-      printf("Error");
+  while (scancode != 0x81) {
+    if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) {
+      printf("driver_receive failed with: %d", r);
       continue;
     }
 
     if (is_ipc_notify(ipc_status)) {
       switch (_ENDPOINT_P(msg.m_source)) {
         case HARDWARE:
+          if (msg.m_notify.interrupts & keyboard_mask) {
+            kbd_ih();
+          }
           if (msg.m_notify.interrupts & timer_mask) {
 
             if (original_speed > 0) {
-              if (vg_draw_rectangle(xi, yi, width, height, 0xF00000)) {
+              if (vg_draw_rectangle(xi, yi, width, height, 0x000000)) {
                 return 1;
               }
               if (vertical_direction == 1) {
@@ -263,7 +264,7 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
             }
             else {
               if (speed == 0) {
-                if (vg_draw_rectangle(xi, yi, width, height, 0xF00000)) {
+                if (vg_draw_rectangle(xi, yi, width, height, 0x000000)) {
                   return 1;
                 }
                 if (vertical_direction == 1) {
@@ -281,9 +282,6 @@ int(video_test_move)(xpm_map_t xpm, uint16_t xi, uint16_t yi, uint16_t xf, uint1
                 speed += 1;
               }
             }
-          }
-          if (msg.m_notify.interrupts & keyboard_mask) {
-            kbd_ih();
           }
       }
     }

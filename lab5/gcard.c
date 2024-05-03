@@ -22,7 +22,7 @@ int(set_graphics_mode)(uint16_t mode) {
 
 int(map_video_memory)(uint16_t mode) {
   if(memset(&current_mode, 0, sizeof(current_mode)) == NULL){
-    printf("Error setting memory to 0 aaaaaaaaaaaaaaaa");
+    printf("Error setting memory to 0");
     return 1;
   }
   if (vbe_get_mode_info(mode, &current_mode)) {
